@@ -3,6 +3,14 @@ info:
   title: User API
   version: 1.0.0
   description: API for user registration
+
+servers:
+  - url: https://your-domain.com
+    description: cloud server
+  - url: http://localhost
+    description: Local development server
+  
+
 paths:
   /api/v1/user/register:
     post:
