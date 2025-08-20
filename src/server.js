@@ -1,29 +1,33 @@
-import express from "express";
-import {logger} from './config/logger.js';
+import express from "express"
+import {logger} from './config/logger.js'
 import {connectdb} from './config/database.js'
 import userRoutes from './routes/user.js'
 import bookRoutes from './routes/book.js'
+import borrowRoutes from './routes/borrow.js'
+import reportRoutes from './routes/report.js'
 import {ErrorHandler} from './middlewares/errorhandler.js'
-import { CustomError } from "./utility/customerror.js";
+import { CustomError } from "./utility/customerror.js"
 import {status} from 'http-status'
 
 
-connectdb();
+connectdb()
 
-const app = express();
-app.use(express.json());
+const app = express()
+app.use(express.json())
 
 app.get('/get', (req, res) => {
     res.send('Hello World!')
   })
 
 app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.originalUrl}`);
-  next();
-});
+  logger.info(`${req.method} ${req.originalUrl}`)
+  next()
+})
 
-app.use("/api/v1/user", userRoutes);
+app.use("/api/v1/user", userRoutes)
 app.use("/api/v1/book", bookRoutes)
+app.use("/api/v1/borrow", borrowRoutes)
+app.use("/api/v1/report", reportRoutes)
 
 app.use('*',(req, res, next) => {
     next(new CustomError('Resource not found', status.NOT_FOUND))
@@ -31,5 +35,5 @@ app.use('*',(req, res, next) => {
 
 app.use(ErrorHandler)
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const PORT = process.env.PORT || 5000
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`))

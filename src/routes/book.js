@@ -7,10 +7,10 @@ import { bookCreateSchema, bookUpdateSchema } from '../validation/schema.js'
 const router = Router()
 
 router.use(authjwt)
-router.post('/', authorize, validate_payload(bookCreateSchema), addBook)
+router.post('/', authorize('admin'), validate_payload(bookCreateSchema), addBook)
 router.get('/', listBooks)
-router.patch('/:id',authorize, validate_payload(bookUpdateSchema), updateBook)
-router.delete('/:id', authorize, deleteBook)
+router.patch('/:id',authorize('admin'), validate_payload(bookUpdateSchema), updateBook)
+router.delete('/:id', authorize('admin'), deleteBook)
 
 
 export default router
