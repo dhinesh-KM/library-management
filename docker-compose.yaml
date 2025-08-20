@@ -2,13 +2,13 @@
 services:
   user:
     build:
-      context: ./backend
+      context: .
     ports:
       - "3000:3000"
-    command: npx nodemon
+    command: npm run dev
     volumes:
-      - ./backend:/app
-      - /app/node_modules 
+      - .:/app
+      - /app/node_modules
     depends_on:
       - mongo
 
