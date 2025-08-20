@@ -33,7 +33,7 @@ Setup with Docker
 
 Clone the repository:
 ---------------------------------------
-git clone https://github.com/yourusername/library-management.git
+https://github.com/dhinesh-KM/library-management.git
 cd library-management
 
 
@@ -51,13 +51,16 @@ docker ps
 Ports:
 ---------------------------------------
 Nginx: http://localhost
+
 MongoDB: mongodb://localhost:27017/library
 
 
 Run Locally (Without Docker)
 ---------------------------------------
 cd library-management
+
 npm install
+
 npm start
 
 
@@ -69,27 +72,38 @@ npm start
 👤 Users
 -----------------------------------------------------------------------------
 POST /api/v1/users/register – Register a new user
+
 POST /api/v1/users/login – Login user
+
 Role-based access: Admin, Member
 
 📚 Books
 -----------------------------------------------------------------------------
 POST /api/v1/book – Add a new book (Admin)
+
 GET /api/v1/book – List books with pagination & filtering (All users)
+
 GET /api/v1/book/:id – Get book details by ID (All users)
+
 PATCH /api/v1/book/:id – Update book details (Admin)
+
 DELETE /api/v1/book/:id – Delete book (Admin)
 
 📖 Borrow
 -----------------------------------------------------------------------------
 POST /api/v1/borrow/:bookId – Borrow a book (Member)
+
 POST /api/v1/borrow/return/:borrowId – Return a borrowed book (Member)
+
 GET /api/v1/borrow/history – Get borrow history for logged-in user (Member)
 
 📊 Reports
 -----------------------------------------------------------------------------
 GET /api/v1/report/most-borrowed – Most borrowed books (Admin)
+
 GET /api/v1/report/active-members – Most active members (Admin)
+
 GET /api/v1/report/library-availability – Overall library availability (Admin)
+
 GET /api/v1/report/books-availability – Availability per book (Admin)
 
