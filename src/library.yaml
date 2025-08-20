@@ -1,0 +1,803 @@
+openapi: 3.0.3
+info:
+  title: User API
+  version: 1.0.0
+  description: API for user registration
+paths:
+  /api/v1/user/register:
+    post:
+      summary: Register a new user
+      tags:
+        - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterUser"
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAlreadyExists'
+                
+  /api/v1/user/login:
+    post:
+      summary: User login
+      tags:
+        - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginUser"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidCredentials'
+                
+  /api/v1/book:
+    post:
+      summary: Add a new book
+      tags:
+        - Book
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewBook"
+      responses:
+        '201':
+          description: Book added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookResponse'
+        '409':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ISBNExists'
+        '400':
+          description: conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidPublicationDate'
+                
+    get:
+      summary: List books with optional filtering and pagination
+      tags:
+        - Book
+      parameters:
+        - name: limit
+          in: query
+          description: Number of books to return per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+        - name: after
+          in: query
+          description: Cursor for pagination, _id of the last item from previous page
+          required: false
+          schema:
+            type: string
+            example: 64f3a8b2c1d2a9f1e0a1b234
+        - name: author
+          in: query
+          description: Filter books by author (case-insensitive exact match)
+          required: false
+          schema:
+            type: string
+            example: starc
+        - name: genre
+          in: query
+          description: Filter books by genre (case-insensitive exact match)
+          required: false
+          schema:
+            type: string
+            example: Fantasy
+        - name: q
+          in: query
+          description: Search term for title or author (case-insensitive)
+          required: false
+          schema:
+            type: string
+            example: title 11
+      responses:
+        '200':
+          description: List of books
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookListResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+                
+  /api/v1/book/{id}:
+    patch:
+      summary: Update an existing book
+      tags:
+        - Book
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the book to update
+          schema:
+            type: string
+            example: 64f3a8b2c1d2a9f1e0a1b234
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBook"
+      responses:
+        '200':
+          description: Book updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookUpdatedResponse'
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookNotFound'
+                
+    delete:
+      summary: Delete a book
+      tags:
+        - Book
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the book to delete
+          schema:
+            type: string
+            example: 64f3a8b2c1d2a9f1e0a1b234
+      responses:
+        '200':
+          description: Book deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDeletedResponse'
+        '400':
+          description: Cannot delete book while copies exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDeleteError'
+                
+  /api/v1/borrow/{bookId}:
+    post:
+      summary: Borrow a book
+      tags:
+        - Borrow
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          description: ID of the book to borrow
+          schema:
+            type: string
+            example: 64f3a8b2c1d2a9f1e0a1b234
+      responses:
+        '200':
+          description: Book borrowed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookBorrowedResponse'
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookNotFound'
+                
+  /api/v1/borrow/return/{borrowId}:
+    post:
+      summary: Return a borrowed book
+      tags:
+        - Borrow
+      parameters:
+        - name: borrowId
+          in: path
+          required: true
+          description: ID of the borrow record
+          schema:
+            type: string
+            example: 64f3a8b2c1d2a9f1e0a1b234
+      responses:
+        '200':
+          description: Book returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookReturnedResponse'
+        '400':
+          description: Invalid return request
+          content:
+            application/json:
+              examples:
+                error1:
+                  $ref: '#/components/examples/BorrowReturnError1'
+                error2:
+                  $ref: '#/components/examples/BorrowReturnError2'
+                  
+  /api/v1/borrow/history:
+    get:
+      summary: Get borrow history for the user
+      tags:
+        - Borrow
+      responses:
+        '200':
+          description: Borrow history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BorrowHistoryResponse'
+                
+  /api/v1/report/most-borrowed:
+    get:
+      summary: Get the most borrowed books
+      tags:
+        - Report
+      responses:
+        '200':
+          description: Most borrowed books retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MostBorrowedResponse'
+                
+  /api/v1/report/active-members:
+    get:
+      summary: Get the most active members based on borrow count
+      tags:
+        - Report
+      responses:
+        '200':
+          description: Active members retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActiveMembersResponse'
+                
+  /api/v1/report/library-availability:
+    get:
+      summary: Get library availability report
+      tags:
+        - Report
+      responses:
+        '200':
+          description: Library availability report retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibraryAvailabilityResponse'
+  
+  /api/v1/report/books-availability:
+    get:
+      summary: Get availability for each book in the library
+      tags:
+        - Report
+      responses:
+        '200':
+          description: Books availability report retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BooksAvailabilityResponse'
+              
+              
+components:
+  examples:
+    BorrowReturnError1:
+      summary: Validation Error1
+      value:
+        error: true
+        msg: Book already returned
+    BorrowReturnError2:
+      summary: Validation Error2
+      value:
+        error: true
+        msg: Not your borrow record
+        
+  schemas:
+    RegisterUser:
+      type: object
+      required:
+        - email
+        - password
+        - name
+      properties:
+        email:
+          type: string
+          format: email
+          example: dhinesh3@gmail.com
+        password:
+          type: string
+          format: password
+          example: dev@123
+        name:
+          type: string
+          example: dhinesh
+
+    UserResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: false
+        msg:
+          type: string
+          example: User registered successfully
+
+    UserAlreadyExists:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: true
+        msg:
+          type: string
+          example: User already exists
+          
+    LoginUser:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: dhinesh@gmail.com
+        password:
+          type: string
+          format: password
+          example: dev@123
+
+    LoginResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: false
+        msg:
+          type: string
+          example: Login successful
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              example: 68a5589cb24cdb63ec73c5ac
+            name:
+              type: string
+              example: dhinesh
+            email:
+              type: string
+              example: dhinesh@gmail.com
+            role:
+              type: string
+              example: admin
+            token:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    InvalidCredentials:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: true
+        msg:
+          type: string
+          example: Invalid credentials
+          
+    NewBook:
+      type: object
+      required:
+        - title
+        - author
+        - isbn
+        - publicationDate
+        - genre
+        - copies
+      properties:
+        title:
+          type: string
+          example: title 11
+        author:
+          type: string
+          example: starc
+        isbn:
+          type: string
+          example: 123456789d
+        publicationDate:
+          type: string
+          example: 20-10-2006
+          description: Date must be in DD-MM-YYYY format
+        genre:
+          type: string
+          example: Fantasy
+        copies:
+          type: integer
+          example: 2
+
+    BookResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: false
+        msg:
+          type: string
+          example: Book added successfully.
+
+    ISBNExists:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: true
+        msg:
+          type: string
+          example: ISBN already exists
+
+    InvalidPublicationDate:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: true
+        msg:
+          type: string
+          example: published date must be in the format DD-MM-YYYY
+          
+    UpdateBook:
+      type: object
+      description: At least one key must be provided for update
+      properties:
+        title:
+          type: string
+          example: title 11
+        author:
+          type: string
+          example: starc
+        isbn:
+          type: string
+          example: 123456789d
+        publicationDate:
+          type: string
+          example: 20-10-2006
+          description: Date must be in DD-MM-YYYY format
+        genre:
+          type: string
+          example: Fantasy
+        copies:
+          type: integer
+          example: 2
+      minProperties: 1
+
+    BookUpdatedResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: false
+        msg:
+          type: string
+          example: Book updated successfully.
+
+    BookNotFound:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: true
+        msg:
+          type: string
+          example: Book not found
+          
+          
+    BookDeletedResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: false
+        msg:
+          type: string
+          example: Book deleted successfully.
+
+    BookDeleteError:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: true
+        msg:
+          type: string
+          example: Cannot delete book while copies exist
+          
+          
+    BookItem:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 64f3a8b2c1d2a9f1e0a1b234
+        title:
+          type: string
+          example: title 11
+        author:
+          type: string
+          example: starc
+        isbn:
+          type: string
+          example: 123456789d
+        publicationDate:
+          type: string
+          example: 20-10-2006
+        genre:
+          type: string
+          example: Fantasy
+        copies:
+          type: integer
+          example: 2
+        createdAt:
+          type: string
+          format: date-time
+          example: 2025-08-20T07:45:00Z
+
+    BookListResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: false
+        books:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookItem'
+        hasNextPage:
+          type: boolean
+          example: true
+        endCursor:
+          type: string
+          nullable: true
+          example: 64f3a8b2c1d2a9f1e0a1b234
+
+    BadRequestError:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: true
+        msg:
+          type: string
+          example: limit must be a positive integer
+          
+          
+    BookBorrowedResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: false
+        msg:
+          type: string
+          example: Book borrowed successfully
+
+    BookReturnedResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: false
+        msg:
+          type: string
+          example: Book returned successfully
+
+    BorrowedBook:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 68a5623beee585798cab8eb6
+        title:
+          type: string
+          example: title 8
+        author:
+          type: string
+          example: starc
+        isbn:
+          type: string
+          example: 123456789b
+
+    BorrowRecord:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 68a5981d67220d3fb37546dd
+        user:
+          type: string
+          example: 68a558a6b24cdb63ec73c5af
+        book:
+          $ref: '#/components/schemas/BorrowedBook'
+        borrowDate:
+          type: string
+          format: date-time
+          example: 2025-08-20T09:40:45.381Z
+        returnDate:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        createdAt:
+          type: string
+          format: date-time
+          example: 2025-08-20T09:40:45.391Z
+
+    BorrowHistoryResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: false
+        data:
+          type: object
+          properties:
+            history:
+              type: array
+              items:
+                $ref: '#/components/schemas/BorrowRecord'
+          
+    MostBorrowedBook:
+      type: object
+      properties:
+        borrowCount:
+          type: integer
+          example: 2
+        title:
+          type: string
+          example: title 9
+        author:
+          type: string
+          example: starc
+
+    MostBorrowedResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: false
+        data:
+          type: object
+          properties:
+            mostBorrowed:
+              type: array
+              items:
+                $ref: '#/components/schemas/MostBorrowedBook'
+          
+    ActiveMember:
+      type: object
+      properties:
+        borrowCount:
+          type: integer
+          example: 2
+        name:
+          type: string
+          example: dhinesh
+        email:
+          type: string
+          format: email
+          example: dhinesh1@gmail.com
+
+    ActiveMembersResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: false
+        data:
+          type: object
+          properties:
+            active_members:
+              type: array
+              items:
+                $ref: '#/components/schemas/ActiveMember'
+          
+    TotalAvailableBooks:
+      type: object
+      properties:
+        totalBooks:
+          type: integer
+          example: 44
+        borrowedBooks:
+          type: integer
+          example: 3
+        availableBooks:
+          type: integer
+          example: 41
+
+    LibraryAvailabilityResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: false
+        data:
+          type: object
+          properties:
+            total_available_books:
+              $ref: '#/components/schemas/TotalAvailableBooks'
+          
+          
+    BookAvailability:
+      type: object
+      properties:
+        title:
+          type: string
+          example: title 1
+        totalCopies:
+          type: integer
+          example: 5
+        borrowedCopies:
+          type: integer
+          example: 0
+        availableCopies:
+          type: integer
+          example: 5
+
+    BooksAvailabilityResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: false
+        data:
+          type: object
+          properties:
+            available_per_book:
+              type: array
+              items:
+                $ref: '#/components/schemas/BookAvailability'
+
+
+
+
+
+
