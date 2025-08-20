@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken'
 import {CustomError} from '../utility/customerror.js'
-import {secretKey} from '../config/config.js';
-import status from 'http-status';
+import {secretKey} from '../config/config.js'
+import status from 'http-status'
 
 export const authjwt = async(req,res,next) => {
     const token = req.header('Authorization')
@@ -21,21 +21,24 @@ export const authjwt = async(req,res,next) => {
 
             return res.status(status.INTERNAL_SERVER_ERROR).json({'msg': err.message})
         }
-        req.user = decoded;
-        next(); 
+        req.user = decoded
+        next() 
       })
     
 }
 
-export const authorize = async(req,res,next) => {
-    try{
-        if (req.user.role != 'admin')
-            throw new CustomError("You don't have permission to do this operation",status.UNAUTHORIZED)
-        next()
+export const authorize = (...roles) => {
+  return async (req, res, next) => {
+    try {
+      if (!roles.includes(req.user.role))
+        throw new CustomError("You don't have permission to do this operation",status.UNAUTHORIZED)
+      
+      next()
+    } 
+    catch (err) {
+      next(err)
     }
-    catch(err){
-        next(err)
-    }
+  }
 }
 
 
