@@ -64,6 +64,15 @@ npm install
 npm start
 
 
+API Documentation
+------------------------------------------------------------------------
+This project includes a Swagger (OpenAPI) specification for the API.
+
+The file is located at:
+
+library-management/library.yaml
+
+
 
 
 📌 API Endpoints
