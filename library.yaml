@@ -3,14 +3,6 @@ info:
   title: User API
   version: 1.0.0
   description: API for user registration
-
-servers:
-  - url: https://your-domain.com
-    description: cloud server
-  - url: http://localhost
-    description: Local development server
-  
-
 paths:
   /api/v1/user/register:
     post:
@@ -137,7 +129,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BookListResponse'
+                $ref: '#/components/schemas/BooksListResponse'
         '400':
           description: Bad request
           content:
@@ -588,24 +580,70 @@ components:
           type: string
           format: date-time
           example: 2025-08-20T07:45:00Z
-
-    BookListResponse:
+          
+    BooksListResponse:
       type: object
       properties:
         error:
           type: boolean
           example: false
-        books:
-          type: array
-          items:
-            $ref: '#/components/schemas/BookItem'
+        data:
+          type: object
+          properties:
+            books:
+              type: array
+              items:
+                $ref: "#/components/schemas/Book"
+            pageInfo:
+              $ref: "#/components/schemas/PageInfo"
+    
+    Book:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "68a57ebcaa6366e75b010289"
+        title:
+          type: string
+          example: "harry potter"
+        author:
+          type: string
+          example: "mitchell"
+        isbn:
+          type: string
+          example: "123456789e"
+        publicationDate:
+          type: string
+          format: date-time
+          example: "2006-10-20T00:00:00.000Z"
+        genre:
+          type: string
+          example: "Fantasy"
+        copies:
+          type: integer
+          example: 2
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-08-20T07:52:28.372Z"
+
+    PageInfo:
+      type: object
+      properties:
         hasNextPage:
           type: boolean
           example: true
-        endCursor:
+        nextCursor:
           type: string
           nullable: true
-          example: 64f3a8b2c1d2a9f1e0a1b234
+          example: "68a5621feee585798cab8eb0"
+        hasPrevPage:
+          type: boolean
+          example: false
+        prevCursor:
+          type: string
+          nullable: true
+          example: "68a57ebcaa6366e75b010289"
 
     BadRequestError:
       type: object
