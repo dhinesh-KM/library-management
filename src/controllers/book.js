@@ -84,7 +84,10 @@ export const deleteBook =  async (req, res, next) => {
 
 export const listBooks =  async (req, res, next) => {
   try{
-        const { limit = 10, after, author, genre, q } = req.query
+        const { limit = 10, after, author, genre, q, before } = req.query
+        let hasNextPage = false
+        let hasPrevPage = false
+        let sort = {_id: -1}
 
         if (!isPositiveInt(limit)) 
                 throw new CustomError("limit must be a positive integer",status.BAD_REQUEST)
@@ -107,17 +110,61 @@ export const listBooks =  async (req, res, next) => {
 
         if (after) filter._id = { $lt: after }
 
+        if (before){
+            filter._id = { $gt: before}
+            sort = {_id: 1}
+        } 
+
         filter.copies = {$gt: 0}
 
-        const items = await Book.findActive(filter)
-            .sort({_id: -1})
+        let items = await Book.findActive(filter)
+            .sort(sort)
             .limit(Number(limit) + 1) // fetch 1 extra to check if there’s a next page
             .select("title author isbn publicationDate genre copies createdAt _id")
 
-        const hasNextPage = items.length > limit
-        if (hasNextPage) items.pop() // remove the extra one
+        if (items.length > limit) {
+            hasNextPage = true
+            items.pop() // trim extra
+        }
 
-        return successResponse(res, {books: items,hasNextPage,endCursor: items.length ? items[items.length - 1]._id : null})
+        if (before) items = items.reverse() // restore order
+
+        // Check if there’s a previous page
+        if (items.length > 0) {
+            const firstId = items[0]._id
+            const prevCheck = await Book.findActive({
+                ...filter,
+                _id: { $gt: firstId }, // anything bigger (newer) exists
+            })
+            .sort({ _id: 1 })
+            .limit(1)
+
+            hasPrevPage = prevCheck.length > 0
+        }
+
+        // Check if there’s a next page
+        if (items.length > 0) {
+            const lastId = items[items.length - 1]._id
+            const nextCheck = await Book.findActive({
+                ...filter,
+                _id: { $lt: lastId }, // anything smaller (older) exists
+            })
+                .sort({ _id: -1 })
+                .limit(1)
+
+            hasNextPage = nextCheck.length > 0
+        }
+        
+        const data ={
+            books: items,
+            pageInfo:{
+                hasNextPage,
+                nextCursor: items.length ? items[items.length - 1]._id : null,
+                hasPrevPage,
+                prevCursor: items.length ? items[0]._id : null
+            }
+        }
+        return successResponse(res,data )
     
     } 
     catch (err) {
