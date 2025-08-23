@@ -3,21 +3,33 @@
 Features
 --------------------------------------------------------------------------------------------
 User management (Admin & Member roles)
+
 Book management (Add, Update, List, Soft Delete)
+
 Borrow/Return tracking
+
 Pagination and search for books
+
 Aggregation for statistics (total books, borrowed books, top borrowed books/users)
+
 Secure authentication with JWT
+
 Dockerized for easy deployment
 
 Tech Stack
 ---------------------------------------------------------------------------------------------
 Backend: Node.js, Express
+
 Database: MongoDB, Mongoose
+
 Authentication: JWT
+
 Validation: Joi
+
 Logging: Winston
+
 Containerization: Docker & Docker Compose
+
 Reverse Proxy: Nginx
 
 Getting Started
