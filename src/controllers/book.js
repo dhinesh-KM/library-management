@@ -16,9 +16,12 @@ export const addBook = async(req, res, next) => {
 
     try{
         const existing_isbn = await Book.findOne({isbn})
-
         if (existing_isbn)
             throw new CustomError("ISBN already exists",status.CONFLICT)
+
+        const existing_book = await Book.findOne({title,author,genre})
+        if (existing_book)
+            throw new CustomError("book already exist with same title, author, genre.",status.CONFLICT)
 
         await Book.create({title,author,isbn,publicationDate: parsedDate,genre,copies})
         return successResponse(res,null,'Book added successfully.',status.CREATED)
@@ -35,6 +38,14 @@ export const updateBook = async(req, res, next) => {
     const {id} = req.params
 
     try{
+        const currentBook = await Book.findById(id)
+        if (!currentBook) 
+            throw new CustomError("Book not found", status.NOT_FOUND)
+
+        const title = data.title || currentBook.title
+        const author = data.author || currentBook.author   
+        const genre = data.genre || currentBook.genre
+
         if (data.isbn)
             {
                 const existing_isbn = await Book.findOne({ _id: { $ne: id }, isbn: data.isbn })
@@ -42,9 +53,19 @@ export const updateBook = async(req, res, next) => {
                     throw new CustomError("ISBN already exists",status.CONFLICT)
             }
 
-        const updated_book = await Book.findByIdAndUpdate(id, data)
-        if (!updated_book) 
-            throw new CustomError("Book not found", status.NOT_FOUND)
+        const existing_book = await Book.findOne({ _id: { $ne: id }, title, author, genre })
+        if (existing_book)
+            throw new CustomError("book already exist with same title, author, genre.",status.CONFLICT)
+
+
+        for (const key in data) {
+            if (key === 'publicationDate') {
+                currentBook[key] = moment(data[key], "DD-MM-YYYY").format("YYYY-MM-DD")
+            } else {
+                currentBook[key] = data[key]        
+            }
+        }
+        await currentBook.save()
 
         return successResponse(res,null,'Book updated successfully.',status.OK)
 
