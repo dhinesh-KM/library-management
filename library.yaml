@@ -6,9 +6,20 @@ info:
 paths:
   /api/v1/user/register:
     post:
-      summary: Register a new user
+      description: |
+        Register a new user.  
+        - To register a **Member**, call this endpoint without query params.  
+        - To register an **Admin**, add `?role=admin` as query string.
       tags:
         - User
+      parameters:
+        - in: query
+          name: role
+          required: false
+          schema:
+            type: string
+            enum: [admin]
+          description: Only required when registering an **Admin**
       requestBody:
         content:
           application/json:
@@ -97,7 +108,14 @@ paths:
             default: 10
         - name: after
           in: query
-          description: Cursor for pagination, _id of the last item from previous page
+          description: use nextCursor value, if hasNextPage is true
+          required: false
+          schema:
+            type: string
+            example: 64f3a8b2c1d2a9f1e0a1b234
+        - name: before
+          in: query
+          description: use prevCursor value, if hasPrevPage is true
           required: false
           schema:
             type: string
