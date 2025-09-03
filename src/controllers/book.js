@@ -103,6 +103,7 @@ export const deleteBook =  async (req, res, next) => {
     }
 }
 
+
 export const listBooks =  async (req, res, next) => {
   try{
         const { limit = 10, after, author, genre, q, before } = req.query
@@ -130,50 +131,36 @@ export const listBooks =  async (req, res, next) => {
         }
 
         if (after) filter._id = { $lt: after }
+    
 
-        if (before){
+        if (before) {
             filter._id = { $gt: before}
             sort = {_id: 1}
-        } 
+        }
+
 
         filter.copies = {$gt: 0}
 
         let items = await Book.findActive(filter)
             .sort(sort)
-            .limit(Number(limit) + 1) // fetch 1 extra to check if there’s a next page
+            .limit(Number(limit))
             .select("title author isbn publicationDate genre copies createdAt _id")
 
-        if (items.length > limit) {
-            hasNextPage = true
-            items.pop() // trim extra
-        }
 
         if (before) items = items.reverse() // restore order
 
         // Check if there’s a previous page
         if (items.length > 0) {
             const firstId = items[0]._id
-            const prevCheck = await Book.findActive({
-                ...filter,
-                _id: { $gt: firstId }, // anything bigger (newer) exists
-            })
-            .sort({ _id: 1 })
-            .limit(1)
-
-            hasPrevPage = prevCheck.length > 0
+            const prevExists = await Book.exists({ _id: { $gt: firstId } })
+            hasPrevPage = !!prevExists
         }
 
         // Check if there’s a next page
         if (items.length > 0) {
             const lastId = items[items.length - 1]._id
-            const nextCheck = await Book.findActive({
-                ...filter,
-                _id: { $lt: lastId }, // anything smaller (older) exists
-            })
-                .sort({ _id: -1 })
-                .limit(1)
-
-            hasNextPage = nextCheck.length > 0
+            const nextExists = await Book.exists({ _id: { $lt: lastId } })
+            hasNextPage = !!nextExists
         }
         
         const data ={
@@ -192,5 +179,3 @@ export const listBooks =  async (req, res, next) => {
         next(err)
     }
 }
-
-
