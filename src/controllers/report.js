@@ -93,34 +93,22 @@ export const availability =  async (req, res) => {
 
 export const availabilityPerTitle = async(req,res,next) =>{
     try{
-        const books = await Book.find().lean()
+        const borrowedCounts = await Book.aggregate([
 
-        
-        const borrowedCounts = await Borrow.aggregate([
-            // Filter only the borrowed books that have not been returned yet
-            { $match: { returnDate: null } },
+            // Only consider non-deleted books
+            { $match: { isDeleted: false }},
 
-            // Group by book ID and count how many times each book is currently borrowed
-            { $group: { _id: "$book", borrowedCount: { $sum: 1 } } }
-        ])
+            // Lookup to find all borrow records for each book
+            { $lookup: { from: "borrows", localField: "_id", foreignField: "book", as: "borrowedInfo" }},
 
-        // Convert borrowedCounts array to map for fast lookup
-        const borrowedMap = {}
-        borrowedCounts.forEach(b => {borrowedMap[b._id.toString()] = b.borrowedCount})
+            // Project the required fields and calculate borrowed and available copies
+            { $project: {   title: 1,
+                            totalCopies: { $add: ["$copies", { $size: "$borrowedInfo" }] }, 
+                            borrowedCopies: { $size: "$borrowedInfo" }, 
+                            availableCopies: "$copies" } }
+        ])       
 
-        const result = books.map(book => {
-        const borrowed = borrowedMap[book._id.toString()] || 0
-        let totalCopies = book.copies + borrowed
-
-        return {
-            title: book.title,
-            totalCopies: totalCopies,
-            borrowedCopies: borrowed,
-            availableCopies: totalCopies - borrowed
-        }
-        })
-
-        return successResponse(res,{available_per_book:result})
+        return successResponse(res,{available_per_book:borrowedCounts})
     }
     catch (err) {
         next(err)
